@@ -1,7 +1,7 @@
 const path = require('path')
-const webpack = require('webpack')
 const HTMLWebpackPlugin = require('html-webpack-plugin')
 const DashboardPlugin = require('webpack-dashboard/plugin')
+// const Jarvis = require('webpack-jarvis')
 
 const dev = process.env.NODE_ENV !== 'production' && process.argv.indexOf('-p') === -1
 
@@ -11,68 +11,64 @@ const HTMLWebpackPluginConfig = new HTMLWebpackPlugin({
   inject: 'body'
 })
 
-const DefinePluginConfig = new webpack.DefinePlugin({
-  'process.env.NODE_ENV': JSON.stringify('production')
-})
-
-const UglifyJsPluginConfig = new webpack.optimize.UglifyJsPlugin({
-  beautify: false,
-  mangle: {
-    screw_ie8: true
-  },
-  compress: {
-    screw_ie8: true
-  },
-  comments: false
-})
-
 module.exports = {
-  devServer: {
-    host: 'localhost',
-    port: '2400',
-    hot: true,
-    headers: {
-      'Access-Control-Allow-Origin': '*'
-    }
-  },
-  entry: [
-    'react-hot-loader/patch',
-    path.join(__dirname, '/src/index.jsx')
-  ],
-  module: {
-    loaders: [
-      {
-        test: /\.jsx?$/,
-        exclude: /node_modules/,
-        loaders: ['babel-loader']
-      },
-      {
-        test: /\.sass$/,
-        loader: 'style-loader!css-loader!sass-loader'
-      },
-      {
-        test: /\.(jpe?g|png|gif|svg)$/i,
-        loader: 'url-loader',
-        options: {
-          limit: 10000
-        }
-      }
-    ]
-  },
+  entry: './src/index.jsx',
   resolve: {
     extensions: ['.js', '.jsx']
   },
   output: {
     filename: 'index.js',
-    path: path.join(__dirname, '../public')
+    path: path.resolve(__dirname, 'dist')
   },
-  plugins: dev ?
+  devServer: {
+    host: 'localhost',
+    port: '2100',
+    headers: {
+      'Access-Control-Allow-Origin': '*'
+    }
+  },
+  module: {
+    rules: [
+      {
+        test: /\.jsx$/,
+        exclude: /node_modules/,
+        use: {
+          loader: "babel-loader"
+        }
+      },
+      {
+        test: /\.sass$/,
+        use: [{
+          loader: "style-loader" // creates style nodes from JS strings
+      }, {
+          loader: "css-loader" // translates CSS into CommonJS
+      }, {
+          loader: "sass-loader" // compiles Sass to CSS
+        }]
+      },
+      {
+        test: /\.(jpe?g|png|gif|svg)$/i,
+        use: [
+          {
+            loader: 'url-loader',
+            options: {
+              limit: 8192
+            }
+          }
+        ]
+      }
+    ]
+  },
+  plugins: dev ? [
+    // new Jarvis({
+    //   port: 1337 // optional: set a port
+    // })
+    HTMLWebpackPluginConfig,
+    new DashboardPlugin()
+  ]
+  :
   [
     HTMLWebpackPluginConfig,
-    new webpack.HotModuleReplacementPlugin(),
-    new webpack.NamedModulesPlugin(),
-    new DashboardPlugin()
-  ] :
-  [HTMLWebpackPluginConfig, DefinePluginConfig, UglifyJsPluginConfig],
+  ],
   devtool: dev ? 'eval-source-map' : false
-}
+};
